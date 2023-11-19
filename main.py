@@ -8,7 +8,7 @@ videos = [
 
 ###################################
 
-import whisper
+from faster_whisper import WhisperModel
 import torch
 import tempfile
 from youtube import download_video_from_youtube
@@ -20,7 +20,7 @@ if not torch.cuda.is_available():
 
 print(">> Loading speech to text model...")
 # 大規模モデルを読み込む
-whisper_model = whisper.load_model("large")
+whisper_model = WhisperModel("large-v2", device="cuda", compute_type="int8_float16")
 print("<< Loaded speech to text model\n")
 
 # データベースインスタンスを作り、データベースに接続する
@@ -38,7 +38,7 @@ for video in videos:
         print(f"   Downloaded video: {video_title} ({video_path})")
 
         # 動画から文字起こしをする
-        result = whisper_model.transcribe(
+        segments, info = whisper_model.transcribe(
             video_path,
             verbose=False,
             fp16=False,
@@ -52,12 +52,12 @@ for video in videos:
         )
 
         # 文字起こし結果を格納
-        for segment in result["segments"]:
+        for segment in segments:
             db.insert_talk_no_commit(
                 video_id,
-                int(segment["start"]),
-                int(segment["end"]),
-                segment["text"]
+                int(segment.start),
+                int(segment.end),
+                segment.text
             )
 
         # データベースに反映
