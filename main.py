@@ -40,16 +40,19 @@ for video in videos:
         # 動画から文字起こしをする
         segments, info = whisper_model.transcribe(
             video_path,
-            verbose=False,
-            fp16=False,
             language="ja"
         )
 
         # 動画情報を格納
-        db.insert_yt_video_no_commit(
-            video_id,
-            video_title
-        )
+        try:
+          db.insert_yt_video_no_commit(
+              video_id,
+              video_title
+          )
+        except Exception as e:
+          print(e)
+          print("<< Skipped")
+          continue
 
         # 文字起こし結果を格納
         for segment in segments:
